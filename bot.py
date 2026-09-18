@@ -1,7 +1,30 @@
+import os
 import random
+from threading import Thread
 import discord
 from discord import app_commands
-from discord.ext import commands
+from flask import Flask
+
+# --------------------------------------------------
+# Render用 Webサーバー設定 (スリープ防止用)
+# --------------------------------------------------
+app = Flask("")
+
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+
+def run():
+    # Renderで割り当てられるPORT番号を取得（デフォルトは8080）
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
+
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 # Botのトークンをここに貼り付けます
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -32,30 +55,28 @@ FORTUNES = {
 
 # 結果の選択肢と確率の設定（合計100%）
 RESULTS = ["超大吉", "大吉", "中吉", "吉", "凶"]
-WEIGHTS = [10, 22.5, 22.5, 22.5, 22.5]  # 超大吉: 10%, その他4つ: 22.5%ずつ (計90%)
+WEIGHTS = [10, 22.5, 22.5, 22.5, 22.5]
 
 
 @client.event
 async def on_ready():
-    # スラッシュコマンドを同期
     await tree.sync()
     print(f"ログインしました: {client.user}")
 
 
-# /fortune コマンドの定義
 @tree.command(name="fortune", description="今日の運勢を占います")
 async def fortune(interaction: discord.Interaction):
     # 重み（確率）に従って1つ選択
     result = random.choices(RESULTS, weights=WEIGHTS, k=1)[0]
-
-    # 選択された結果に対応する一言メッセージをランダムに1つ選択
     message = random.choice(FORTUNES[result])
 
-    # 返信メッセージの作成
     response = f"**[{result}]**\n{message}"
-
     await interaction.response.send_message(response)
 
 
-# Botの起動
-client.run(TOKEN)
+# --------------------------------------------------
+# 起動処理
+# --------------------------------------------------
+if __name__ == "__main__":
+    keep_alive()  # Webサーバーをバックグラウンドで起動
+    client.run(TOKEN)
