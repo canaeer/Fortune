@@ -1,6 +1,7 @@
 import os
 import random
 from threading import Thread
+
 import discord
 from discord import app_commands
 from flask import Flask
@@ -26,11 +27,14 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+
 # Botのトークンをここに貼り付けます
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# インテントの設定
+# インテントの設定（メッセージ読み取り権限を追加）
 intents = discord.Intents.default()
+intents.message_content = True  # ←メッセージの内容を検出するために必須です
+
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
@@ -58,10 +62,37 @@ RESULTS = ["超大吉", "大吉", "中吉", "吉", "凶"]
 WEIGHTS = [10, 22.5, 22.5, 22.5, 22.5]
 
 
+# --------------------------------------------------
+# 特定の発言に反応する応答の設定
+# --------------------------------------------------
+RESPONSE_PAIRS = {
+    "おはよう": "おはようございます！今日も一日頑張りましょう！",
+    "おつかれ": "お疲れ様です！ゆっくり休んでくださいね。",
+    "こんにちは": "こんにちは！いい天気ですね！",
+    # 追加したい場合はここに "キーワード": "返答" の形式で増やせます
+}
+
+
 @client.event
 async def on_ready():
     await tree.sync()
     print(f"ログインしました: {client.user}")
+
+
+# --------------------------------------------------
+# メッセージ受信時の処理
+# --------------------------------------------------
+@client.event
+async def on_message(message: discord.Message):
+    # Bot自身のメッセージには反応しない（無限ループ防止）
+    if message.author == client.user:
+        return
+
+    # メッセージの中にキーワードが含まれているかチェックして返答
+    for word, reply in RESPONSE_PAIRS.items():
+        if word in message.content:
+            await message.channel.send(f"{message.author.mention} {reply}")
+            break
 
 
 @tree.command(name="fortune", description="今日の運勢を占います")
