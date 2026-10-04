@@ -55,20 +55,27 @@ FORTUNES = {
     "凶": [
         "何もしない方がいいかもね...今日はもう寝よう...",
     ],
+    "ドラ吉": [
+        "運がいいね...!!今日はずっとそばにいるね！！",
+    ],
 }
 
 # 結果の選択肢と確率の設定（合計100%）
-RESULTS = ["超大吉", "大吉", "中吉", "吉", "凶"]
-WEIGHTS = [10, 22.5, 22.5, 22.5, 22.5]
+RESULTS = ["ドラ吉""超大吉", "大吉", "中吉", "吉", "凶"]
+WEIGHTS = [1,9, 22.5, 22.5, 22.5, 22.5]
 
 
 # --------------------------------------------------
 # 特定の発言に反応する応答の設定
 # --------------------------------------------------
 RESPONSE_PAIRS = {
-    "おはよう": "おはようございます！今日も一日頑張りましょう！",
-    "おつかれ": "お疲れ様です！ゆっくり休んでくださいね。",
-    "こんにちは": "こんにちは！いい天気ですね！",
+    "おはよう": "おはよう～今日も頑張って行こ～！！",
+    "おつかれ": "おつかれさま～～晩御飯早く作って！！",
+    "おやすみ": "また明日ね、{name}！",
+    "ドラゴン": "なぁに？",
+    "どらごん": "ガォーーーーー！！",
+    "ド": "よんだ？？",
+    "呼んでない": "そっか...",
     # 追加したい場合はここに "キーワード": "返答" の形式で増やせます
 }
 
@@ -84,14 +91,19 @@ async def on_ready():
 # --------------------------------------------------
 @client.event
 async def on_message(message: discord.Message):
-    # Bot自身のメッセージには反応しない（無限ループ防止）
+    # Bot自身のメッセージには反応しない
     if message.author == client.user:
         return
 
+    # ユーザーの表示名（サーバー上のニックネーム、無ければアカウント名）を取得
+    user_name = message.author.display_name
+
     # メッセージの中にキーワードが含まれているかチェックして返答
-    for word, reply in RESPONSE_PAIRS.items():
+    for word, reply_template in RESPONSE_PAIRS.items():
         if word in message.content:
-            await message.channel.send(f"{message.author.mention} {reply}")
+            # {name} の部分を実際のユーザー名に置き換えて送信
+            reply = reply_template.format(name=user_name)
+            await message.channel.send(reply)
             break
 
 
